@@ -48,7 +48,10 @@ const update = [
   }).withMessage('Please upload an image with format (jpeg, png).'),
   check('logo').custom((value, { req }) => {
     return checkFileMaxSize(req, 'logo', maxFileSize)
-  }).withMessage('Maximum file size of ' + maxFileSize / 1000000 + 'MB')
+  }).withMessage('Maximum file size of ' + maxFileSize / 1000000 + 'MB'),
+  // SOLUCIÓN
+  check('percentage').optional().isFloat({ min: -5, max: 5 }).toFloat().withMessage('El porcentaje está fuera de rango')
+
 ]
 
 export { create, update }

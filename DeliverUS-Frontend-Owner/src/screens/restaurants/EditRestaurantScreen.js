@@ -15,6 +15,8 @@ import { ErrorMessage, Formik } from 'formik'
 import TextError from '../../components/TextError'
 import { prepareEntityImages } from '../../api/helpers/FileUploadHelper'
 import { buildInitialValues } from '../Helper'
+import TextSemiBold from '../../components/TextSemibold'
+import DeleteModal from '../../components/DeleteModal'
 
 export default function EditRestaurantScreen ({ navigation, route }) {
   const [open, setOpen] = useState(false)
@@ -22,7 +24,11 @@ export default function EditRestaurantScreen ({ navigation, route }) {
   const [backendErrors, setBackendErrors] = useState()
   const [restaurant, setRestaurant] = useState({})
 
-  const [initialRestaurantValues, setInitialRestaurantValues] = useState({ name: null, description: null, address: null, postalCode: null, url: null, shippingCosts: null, email: null, phone: null, restaurantCategoryId: null, logo: null, heroImage: null })
+  // SOLUCIÓN
+  const [textoConfirmacion, setTextoConfirmacion] = useState(false)
+
+  // SOLUCIÓN
+  const [initialRestaurantValues, setInitialRestaurantValues] = useState({ name: null, description: null, address: null, postalCode: null, url: null, shippingCosts: null, email: null, phone: null, restaurantCategoryId: null, logo: null, heroImage: null, percentage: 0 })
   const validationSchema = yup.object().shape({
     name: yup
       .string()
@@ -56,7 +62,12 @@ export default function EditRestaurantScreen ({ navigation, route }) {
       .number()
       .positive()
       .integer()
-      .required('Restaurant category is required')
+      .required('Restaurant category is required'),
+    // SOLUCIÓN
+    percentage: yup
+      .number()
+      .max(5, 'Percentage too big')
+      .min(-5, 'Percentage too small')
   })
 
   useEffect(() => {
@@ -129,6 +140,11 @@ export default function EditRestaurantScreen ({ navigation, route }) {
 
   const updateRestaurant = async (values) => {
     setBackendErrors([])
+    if (values.percentage !== 0) {
+      setTextoConfirmacion(true)
+    } else {
+      setTextoConfirmacion(false)
+    }
     try {
       const updatedRestaurant = await update(restaurant.id, values)
       showMessage({
@@ -233,6 +249,36 @@ export default function EditRestaurantScreen ({ navigation, route }) {
                 backendErrors.map((error, index) => <TextError key={index}>{error.param}-{error.msg}</TextError>)
               }
 
+              <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 20, marginBottom: 10 }} >
+              <Pressable onPress={() => {
+                const porcentaje = values.percentage + 0.5
+                if (porcentaje < 5) {
+                  setFieldValue('percentage', porcentaje)
+                }
+              }}>
+                <MaterialCommunityIcons
+                  name={'arrow-up-circle'}
+                  color={GlobalStyles.brandSecondaryTap}
+                  size={40}
+                />
+              </Pressable>
+
+              <TextSemiBold>Porcentaje actual: <TextSemiBold textStyle={{ color: GlobalStyles.brandPrimary }}>{values.percentage}%</TextSemiBold></TextSemiBold>
+
+              <Pressable onPress={() => {
+                const porcentaje = values.percentage - 0.5
+                if (porcentaje > -5) {
+                  setFieldValue('percentage', porcentaje)
+                }
+              }}>
+                <MaterialCommunityIcons
+                  name={'arrow-down-circle'}
+                  color={GlobalStyles.brandSecondaryTap}
+                  size={40}
+                />
+              </Pressable>
+              </View>
+
               <Pressable
                 onPress={handleSubmit}
                 style={({ pressed }) => [
@@ -252,6 +298,12 @@ export default function EditRestaurantScreen ({ navigation, route }) {
               </Pressable>
             </View>
           </View>
+          <DeleteModal
+            isVisible={textoConfirmacion !== false}
+            onCancel={() => setTextoConfirmacion(false)}
+            onConfirm={() => updateRestaurant(values)}>
+              <TextRegular>Va a aplicar un porcentaje correctivo sobre el precio de los productos de este restaurante</TextRegular>
+          </DeleteModal>
         </ScrollView>
       )}
     </Formik>

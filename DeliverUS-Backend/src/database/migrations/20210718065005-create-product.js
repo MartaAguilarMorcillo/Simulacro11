@@ -14,8 +14,12 @@ module.exports = {
       description: {
         type: Sequelize.TEXT
       },
-      price: {
+      // SOLUCIÓN
+      basePrice: {
         allowNull: false,
+        type: Sequelize.DOUBLE
+      },
+      price: {
         type: Sequelize.DOUBLE
       },
       image: {

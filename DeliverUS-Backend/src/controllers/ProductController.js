@@ -7,6 +7,7 @@ const indexRestaurant = async function (req, res) {
       where: {
         restaurantId: req.params.restaurantId
       },
+      attributes: { exclude: ['basePrice'] },
       include: [
         {
           model: ProductCategory,
@@ -39,6 +40,7 @@ const show = async function (req, res) {
 const create = async function (req, res) {
   let newProduct = Product.build(req.body)
   try {
+    newProduct.price = newProduct.basePrice
     newProduct = await newProduct.save()
     res.json(newProduct)
   } catch (err) {
@@ -107,12 +109,38 @@ const popular = async function (req, res) {
   }
 }
 
+// SOLUCIÓN
+const productsNewPrices = async function (req, res) {
+  try {
+    const restaurant = await Restaurant.findByPk(req.params.restaurantId)
+    const products = await Product.findAll({ where: { restaurantId: restaurant.id } })
+    if (restaurant.percentage !== 0) {
+      for (const pr of products) {
+        const product = await Product.findByPk(pr.id)
+        const precio = product.basePrice * (1 + (restaurant.percentage / 100))
+        await Product.update({ price: precio }, { where: { id: product.id } })
+      }
+    } else {
+      for (const pr of products) {
+        const product = await Product.findByPk(pr.id)
+        const precio = product.basePrice
+        await Product.update({ price: precio }, { where: { id: product.id } })
+      }
+    }
+    const updatedRestaurant = await Restaurant.findByPk(req.params.restaurantId)
+    res.json(updatedRestaurant)
+  } catch (err) {
+    res.status(500).send(err)
+  }
+}
+
 const ProductController = {
   indexRestaurant,
   show,
   create,
   update,
   destroy,
-  popular
+  popular,
+  productsNewPrices
 }
 export default ProductController

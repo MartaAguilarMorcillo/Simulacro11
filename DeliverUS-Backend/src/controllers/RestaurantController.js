@@ -70,9 +70,25 @@ const show = async function (req, res) {
   }
 }
 
+// SOLUCIÓN
 const update = async function (req, res) {
   try {
     await Restaurant.update(req.body, { where: { id: req.params.restaurantId } })
+    const restaurant = await Restaurant.findByPk(req.params.restaurantId)
+    const products = await Product.findAll({ where: { restaurantId: restaurant.id } })
+    if (restaurant.percentage !== 0) {
+      for (const pr of products) {
+        const product = await Product.findByPk(pr.id)
+        const precio = product.basePrice * (1 + (restaurant.percentage / 100))
+        await Product.update({ price: precio }, { where: { id: product.id } })
+      }
+    } else {
+      for (const pr of products) {
+        const product = await Product.findByPk(pr.id)
+        const precio = product.basePrice
+        await Product.update({ price: precio }, { where: { id: product.id } })
+      }
+    }
     const updatedRestaurant = await Restaurant.findByPk(req.params.restaurantId)
     res.json(updatedRestaurant)
   } catch (err) {
